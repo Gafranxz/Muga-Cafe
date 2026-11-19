@@ -295,3 +295,74 @@ td{padding:12px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
   .demo-meja{display:none}
   .meja-pill{font-size:12px;padding:6px 10px}
 }
+
+/* ==========================================================================
+   MICRO-INTERACTIONS — tombol, kartu, skeleton shimmer
+   (blok ini sengaja ditaruh paling bawah agar mudah ditinjau / dihapus)
+   ========================================================================== */
+:root{ --ease-out:cubic-bezier(.22,.61,.36,1) }
+
+/* ---- Tombol ---- */
+.btn,.chip,.nav-item,.qty-btn,.icon-btn,.ai-fab{
+  transition:transform .18s var(--ease-out),background-color .18s,border-color .18s,color .18s,box-shadow .18s;
+  -webkit-tap-highlight-color:transparent;
+}
+@media (hover:hover){
+  .btn:hover{transform:translateY(-1px)}
+  .btn-primary:hover{box-shadow:0 6px 16px rgba(62,42,30,.22)}
+  .btn-outline:hover{background:var(--cream)}
+  .chip:hover{border-color:var(--brown);transform:translateY(-1px)}
+  .qty-btn:hover{border-color:var(--brown);background:var(--cream)}
+  .icon-btn:hover{border-color:var(--brown)}
+  .ai-fab:hover{transform:scale(1.06)}
+}
+/* :active ditaruh setelah :hover supaya efek tekan menang */
+.btn:active,.chip:active,.qty-btn:active,.icon-btn:active,.nav-item:active{transform:scale(.95);transition-duration:.08s}
+.ai-fab:active{transform:scale(.92);transition-duration:.08s}
+.btn:focus-visible,.chip:focus-visible,.qty-btn:focus-visible,.icon-btn:focus-visible,.nav-item:focus-visible,.ai-fab:focus-visible{outline:2px solid var(--brown);outline-offset:2px}
+.btn:disabled{opacity:.65;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* Umpan balik "berhasil ditambahkan" pada tombol Tambah */
+.btn.is-added,.btn.is-added:hover{background:var(--green);border-color:var(--green);color:#fff;animation:pop .35s var(--ease-out)}
+@keyframes pop{0%{transform:scale(.9)}55%{transform:scale(1.07)}100%{transform:scale(1)}}
+
+/* Badge keranjang memantul saat jumlah berubah */
+.cart-badge.bump{animation:bump .4s var(--ease-out)}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}
+
+/* Spinner di dalam tombol (tombol Bayar) */
+.spinner{display:inline-block;width:14px;height:14px;margin-right:8px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;vertical-align:-2px;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---- Hover kartu (hanya kartu yang bisa diklik/berisi aksi) ---- */
+.menu-card,.kanban-card{transition:transform .22s var(--ease-out),box-shadow .22s,border-color .22s}
+.menu-visual{transition:background-color .22s}
+@media (hover:hover){
+  .menu-card:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--beige)}
+  .menu-card:hover .menu-visual{background:var(--beige)}
+  .kanban-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-sm)}
+}
+.menu-card:not(.is-skeleton):active{transform:scale(.99)}
+
+/* ---- Skeleton shimmer ---- */
+.skeleton{position:relative;overflow:hidden;background:var(--cream);border-radius:8px}
+.skeleton::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);animation:shimmer 1.3s ease-in-out infinite}
+@keyframes shimmer{to{transform:translateX(100%)}}
+.menu-card.is-skeleton{pointer-events:none;box-shadow:none}
+.sk-visual{height:130px;border-radius:0}
+.sk-line{height:12px;margin-bottom:8px}
+.sk-line.w40{width:40%;height:16px}
+.sk-line.w60{width:60%;height:16px}
+.sk-line.w90{width:90%}
+.sk-btns{display:flex;gap:8px;margin-top:8px}
+.sk-btn{flex:1;height:40px;border-radius:999px}
+@media (max-width:720px){ .sk-visual{height:96px} }
+/* Kartu asli muncul halus setelah skeleton */
+.menu-grid.is-loaded .menu-card{animation:fadeIn .3s ease both}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* ---- Hormati pengguna yang mematikan animasi di perangkatnya ---- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+

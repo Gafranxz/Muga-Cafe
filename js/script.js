@@ -100,7 +100,27 @@ function showView(name){
 function renderCats(){
   $("catChips").innerHTML = CATS.map(c=>`<button type="button" class="chip ${c===activeCat?"active":""}" onclick="setCat('${c}')">${c}</button>`).join("");
 }
-function setCat(c){ activeCat=c; renderCats(); renderMenus(); }
+function setCat(c){ activeCat=c; renderCats(); showMenuSkeleton(renderMenus); }
+/* ---------- Skeleton shimmer ----------
+   Data menu di prototipe ini sudah ada di memori, jadi loading-nya disimulasikan (±450 ms).
+   Saat nanti memakai backend, panggil showMenuSkeleton() sebelum fetch,
+   lalu renderMenus() setelah data tiba. */
+let skeletonTimer;
+const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function menuSkeletonHTML(n=6){
+  const card = `<article class="menu-card is-skeleton" aria-hidden="true"><div class="skeleton sk-visual"></div><div class="menu-body"><div class="skeleton sk-line w60"></div><div class="skeleton sk-line w90"></div><div class="skeleton sk-line w40"></div><div class="sk-btns"><div class="skeleton sk-btn"></div><div class="skeleton sk-btn"></div></div></div></article>`;
+  return card.repeat(n);
+}
+function showMenuSkeleton(done, ms=450){
+  clearTimeout(skeletonTimer);
+  const grid = $("menuGrid");
+  if(prefersReducedMotion()){ done(); return; }
+  grid.classList.remove("is-loaded");
+  grid.setAttribute("aria-busy","true");
+  grid.innerHTML = menuSkeletonHTML();
+  $("menuCount").textContent = "Memuat…";
+  skeletonTimer = setTimeout(()=>{ grid.removeAttribute("aria-busy"); done(); }, ms);
+}
 function renderMenus(){
   const q = ($("searchInput").value||"").toLowerCase();
   const list = MENUS.filter(m=>(activeCat==="Semua"||m.cat===activeCat)&&(m.name.toLowerCase().includes(q)||m.desc.toLowerCase().includes(q)));
@@ -112,6 +132,7 @@ function renderMenus(){
       <div class="menu-actions"><button type="button" class="btn btn-outline" onclick="openDetail(${m.id})">Detail</button><button type="button" class="btn btn-primary add-btn" aria-label="Tambah ${m.name}" onclick="addToCart(${m.id},1,'')">+</button><button type="button" class="btn btn-primary" onclick="addToCart(${m.id},1,'')">Tambah ke Keranjang</button></div></div>
     </article>`).join("")
   : `<div class="empty-state"><div class="empty-icon">🔍</div><h3>Menu tidak ditemukan</h3><p class="muted">Coba kata kunci atau kategori lain.</p></div>`;
+  $("menuGrid").classList.add("is-loaded");
 }
 
 /* ---------- Detail menu ---------- */
@@ -127,9 +148,12 @@ function addToCart(id,qty,note){
   updateCartBadge(); toast("🛒 Ditambahkan ke keranjang");
   renderCart();
 }
+let prevCartCount = 0;
 function updateCartBadge(){
   const n = cart.reduce((a,c)=>a+c.qty,0);
   const b=$("cartCount"); b.textContent=n; b.hidden = n===0;
+  if(n>prevCartCount){ b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump"); }
+  prevCartCount = n;
 }
 function cartTotals(){
   const sub = cart.reduce((a,c)=>{ const m=MENUS.find(x=>x.id===c.id); return a+(m?m.price*c.qty:0); },0);
@@ -209,7 +233,7 @@ document.querySelectorAll('input[name="pay"]').forEach(r=>r.addEventListener("ch
 function processPayment(btnEl){
   const v=document.querySelector('input[name="pay"]:checked');
   const method=v?v.value:"Tunai";
-  const btn=btnEl||$("payBtn"); const oldText=btn.innerHTML; btn.innerHTML="Memproses…"; btn.disabled=true;
+  const btn=btnEl||$("payBtn"); const oldText=btn.innerHTML; btn.innerHTML='<span class="spinner" aria-hidden="true"></span>Memproses…'; btn.disabled=true;
   setTimeout(()=>{
     btn.disabled=false; btn.innerHTML=oldText;
     const total = currentOrder?currentOrder.total:cartTotals().total;
@@ -320,4 +344,14 @@ function addFAQ(e){ e.preventDefault(); toast("✅ FAQ ditambahkan ke pengetahua
 function saveSettings(e){ e.preventDefault(); toast("⚙️ Pengaturan disimpan"); return false; }
 
 /* Init */
-renderCats(); renderMenus(); renderCart(); updateCartBadge(); renderAdminAll();
+renderCats(); showMenuSkeleton(renderMenus, 600); renderCart(); updateCartBadge(); renderAdminAll();
+
+/* ---------- Umpan balik tombol "Tambah" ---------- */
+document.addEventListener("click", e=>{
+  const btn = e.target.closest(".menu-actions .btn-primary");
+  if(!btn || btn.classList.contains("is-added")) return;
+  const original = btn.innerHTML;
+  btn.classList.add("is-added");
+  btn.innerHTML = btn.classList.contains("add-btn") ? "✓" : "✓ Ditambahkan";
+  setTimeout(()=>{ btn.classList.remove("is-added"); btn.innerHTML = original; }, 1100);
+});
